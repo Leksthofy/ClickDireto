@@ -1,0 +1,25 @@
+name: ClickDireto
+options:
+  bundleIdPrefix: br.clickdireto
+  deploymentTarget:
+    iOS: "16.0"
+targets:
+  ClickDireto:
+    type: application
+    platform: iOS
+    sources:
+      - path: ClickDireto
+    info:
+      path: ClickDireto/Info.plist
+      properties:
+        NSCameraUsageDescription: >
+          O ClickDireto acessa a câmera Canon conectada por cabo (USB/PTP) para
+          detectar e transferir automaticamente novas fotos para o app Foto.
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
+    settings:
+      base:
+        MARKETING_VERSION: 0.1.0
+        CURRENT_PROJECT_VERSION: 1
+        PRODUCT_BUNDLE_IDENTIFIER: br.clickdireto.app
+        GENERATE_INFOPLIST_FILE: NO

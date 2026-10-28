@@ -1,0 +1,27 @@
+name: build
+
+# Compila no runner macOS do GitHub Actions (gratuito para repositórios públicos)
+# para validar que o código Swift/ImageCaptureCore compila sem toque no Xcode.
+
+on: [push, workflow_dispatch]
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Instalar XcodeGen
+        run: brew install xcodegen
+
+      - name: Gerar projeto Xcode
+        run: xcodegen generate
+
+      - name: Compilar (simulador, sem assinatura)
+        run: |
+          set -o pipefail
+          xcodebuild -project ClickDireto.xcodeproj \
+            -scheme ClickDireto \
+            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            build CODE_SIGNING_ALLOWED=NO | tail -n 60

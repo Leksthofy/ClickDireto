@@ -1,0 +1,11 @@
+# Xcode / XcodeGen
+ClickDireto.xcodeproj/
+build/
+DerivedData/
+
+# macOS
+.DS_Store
+
+# Swift
+*.swiftpm
+Package.resolved
