@@ -235,7 +235,15 @@ extension CameraConnectionManager: ICCameraDeviceDelegate {
         for existingFile in existingFiles {
             eventMonitor.markExistingFromEnumeration(handleKey: "ptp-\(existingFile.ptpObjectHandle)")
         }
-        diagnostics.log("Câmera PRONTA com catálogo completo. Fotos já no cartão: \(existingFiles.count) (marcadas — não serão reimportadas).")
+
+        // Capacidade oficial: câmeras de terceiros (Canon incluída) têm "fotografar
+        // enquanto conectada" habilitado por padrão (Apple doc de requestEnableTethering,
+        // deprecated). Confirmação objetiva via capabilities:
+        let caps = device.capabilities.map { "\($0)" }
+        let canShootWhileConnected = caps.contains(ICDeviceCapability.cameraDeviceCanTakePicture.rawValue)
+        diagnostics.log("Capacidade 'fotografar com cabo conectado' (cameraDeviceCanTakePicture): \(canShootWhileConnected)")
+        diagnostics.log("Tela preta/transferência na R8 é o modo USB nativo da câmera (igual no app Foto, Capture One e Evoto). Dispare pelo BOTÃO FÍSICO da câmera — cada foto chega aqui automaticamente.")
+        diagnostics.log("Câmera PRONTA. Catálogo lido (apenas índices, NENHUM download). Fotos já no cartão: \(existingFiles.count) — não serão importadas.")
         appState.setPhase(.connected)
     }
 
