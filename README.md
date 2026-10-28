@@ -34,19 +34,16 @@ docs/FASE-01-relatorio-viabilidade.md
 
 ## Caminho de compilação (sem Mac próprio)
 
-1. Criar conta no GitHub (grátis) e repositório **público** `clickdireto`.
-2. No Windows, dentro da pasta do projeto:
-   ```
-   git init
-   git add .
-   git commit -m "PoC ClickDireto"
-   git remote add origin https://github.com/SEU-USUARIO/clickdireto.git
-   git push -u origin main
-   ```
-3. A Action `build` compila no runner macOS (validação do código).
-4. Para instalação sob demanda: rodar o fluxo que gera .ipa e usar **Sideloadly**
-   (Windows, Apple ID gratuita) — perfil válido por 7 dias; renovação manual.
-5. No iPhone: Ajustes → Privacidade e segurança → **Modo desenvolvedor** → ativar uma vez.
+Repositório: **https://github.com/Leksthofy/ClickDireto**
+
+1. O GitHub Actions compila automaticamente em cada envio:
+   - Workflow `build` — validação de compilação (simulador).
+   - Workflow `ipa` — gera o **`ClickDireto-unsigned.ipa`** para download
+     (aba *Actions* → execução mais recente → *Artifacts*).
+2. Instalação no iPhone pelo Windows: abra o `.ipa` baixado no
+   [Sideloadly](https://sideloadly.io) com uma Apple ID gratuita
+   (perfil válido por 7 dias; renovar rodando de novo).
+3. No iPhone: Ajustes → Privacidade e segurança → **Modo desenvolvedor** → ativar uma vez.
 
 ## Restrições respeitadas
 

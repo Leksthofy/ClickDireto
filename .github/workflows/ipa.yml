@@ -1,0 +1,52 @@
+name: ipa
+
+# Gera um .ipa SEM ASSINATURA pronto para o Sideloadly (Windows):
+# o Sideloadly assina com a Apple ID gratuita do usuário na instalação.
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ["v*"]
+
+jobs:
+  unsigned-ipa:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Instalar XcodeGen
+        run: brew install xcodegen
+
+      - name: Gerar projeto Xcode
+        run: xcodegen generate
+
+      - name: Arquivar (sem assinatura)
+        run: |
+          set -o pipefail
+          xcodebuild -project ClickDireto.xcodeproj \
+            -scheme ClickDireto \
+            -sdk iphoneos \
+            -configuration Release \
+            -derivedDataPath build/DerivedData \
+            -archivePath build/ClickDireto.xcarchive \
+            archive CODE_SIGNING_ALLOWED=NO CODE_SIGN_IDENTITY="" | tail -n 60
+
+      - name: Exportar .app sem assinatura
+        run: |
+          APP=$(find build/DerivedData/Build/Products/Release-iphoneos -maxdepth 1 -name "ClickDireto.app")
+          echo "APP=$APP"
+          mkdir -p build/Payload
+          cp -R "$APP" build/Payload/
+
+      - name: Empacotar .ipa
+        run: |
+          cd build
+          zip -qry ClickDireto-unsigned.ipa Payload
+          ls -lh ClickDireto-unsigned.ipa
+
+      - name: Publicar artefato .ipa
+        uses: actions/upload-artifact@v4
+        with:
+          name: ClickDireto-ipa-unsigned
+          path: build/ClickDireto-unsigned.ipa
+          if-no-files-found: error
