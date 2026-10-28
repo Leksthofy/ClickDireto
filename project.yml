@@ -15,6 +15,12 @@ targets:
         NSCameraUsageDescription: >
           O ClickDireto acessa a câmera Canon conectada por cabo (USB/PTP) para
           detectar e transferir automaticamente novas fotos para o app Foto.
+        NSPhotoLibraryUsageDescription: >
+          O ClickDireto precisa de acesso à biblioteca para salvar automaticamente
+          as fotos recebidas da câmera via cabo USB.
+        NSPhotoLibraryAddUsageDescription: >
+          O ClickDireto usa a permissão de adicionar fotos para salvar os JPEGs
+          originais recebidos da câmera na biblioteca do iPhone.
         UILaunchScreen: {}
         UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
     settings:
