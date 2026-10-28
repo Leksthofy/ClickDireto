@@ -56,7 +56,7 @@ final class CameraConnectionManager: NSObject, ObservableObject {
     func startSearchingForCamera() {
         appState.setPhase(.browsing)
         diagnostics.log("Iniciando busca por câmeras (ICDeviceBrowser, tipo .camera)…")
-        browser.browsedDeviceTypeMask = [.camera]
+        browser.browsedDeviceTypeMask = ICDeviceTypeMask.camera
         browser.start()
     }
 
@@ -70,14 +70,18 @@ final class CameraConnectionManager: NSObject, ObservableObject {
         diagnostics.log("Busca encerrada e encerramento de sessão solicitado.")
     }
 
-    /// Teste manual: dispara captura remota via PTP (o fluxo real usa o botão físico).
+    /// Diagnóstico: no iOS, requestTakePicture() é indisponível (API macOS-only).
+    /// O ClickDireto não precisa dele: a foto chega pelo disparo físico da câmera.
     func takeTestPicture() {
-        guard let camera, isReady else {
-            diagnostics.log("TESTE: câmera não está pronta; conecte-se primeiro.")
+        guard camera != nil else {
+            diagnostics.log("DIAGNÓSTICO: nenhuma câmera conectada ainda.")
             return
         }
-        diagnostics.log("TESTE: enviando requestTakePicture()…")
-        camera.requestTakePicture()
+        guard isReady else {
+            diagnostics.log("DIAGNÓSTICO: câmera presente, mas catálogo ainda não enumerado; aguarde 'PRONTA'.")
+            return
+        }
+        diagnostics.log("DIAGNÓSTICO: sessão OK. Disparo remoto não existe no iOS (requestTakePicture indisponível) — tire a foto pelo botão físico da câmera.")
     }
 
     func refreshPhotoAuthorization() {

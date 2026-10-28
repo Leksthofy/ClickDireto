@@ -63,7 +63,7 @@ struct HomeView: View {
                         .buttonStyle(.borderedProminent)
                     Button("Desconectar") { onStop() }
                         .buttonStyle(.bordered)
-                    Button("Testar recebimento") { onTestCapture() }
+                    Button("Diagnóstico da sessão") { onTestCapture() }
                         .buttonStyle(.bordered)
                 }
                 Button("Reverificar permissão de Foto") { onRefreshAuthorization() }
