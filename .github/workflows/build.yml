@@ -24,4 +24,5 @@ jobs:
             -scheme ClickDireto \
             -sdk iphonesimulator \
             -destination 'generic/platform=iOS Simulator' \
-            build CODE_SIGNING_ALLOWED=NO | tail -n 60
+            build CODE_SIGNING_ALLOWED=NO 2>&1 \
+            | grep -E "error:|note:|BUILD FAILED|BUILD SUCCEEDED"
