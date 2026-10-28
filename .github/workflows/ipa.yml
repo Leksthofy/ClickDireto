@@ -20,7 +20,7 @@ jobs:
       - name: Gerar projeto Xcode
         run: xcodegen generate
 
-      - name: Arquivar (sem assinatura)
+      - name: Compilar (Release, iphoneos, sem assinatura)
         run: |
           set -o pipefail
           xcodebuild -project ClickDireto.xcodeproj \
@@ -28,18 +28,15 @@ jobs:
             -sdk iphoneos \
             -configuration Release \
             -derivedDataPath build/DerivedData \
-            -archivePath build/ClickDireto.xcarchive \
-            archive CODE_SIGNING_ALLOWED=NO CODE_SIGN_IDENTITY="" | tail -n 60
+            build CODE_SIGNING_ALLOWED=NO CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO 2>&1 \
+            | grep -E "error:|note:|BUILD FAILED|BUILD SUCCEEDED"
 
-      - name: Exportar .app sem assinatura
+      - name: Empacotar .ipa
         run: |
           APP=$(find build/DerivedData/Build/Products/Release-iphoneos -maxdepth 1 -name "ClickDireto.app")
           echo "APP=$APP"
           mkdir -p build/Payload
           cp -R "$APP" build/Payload/
-
-      - name: Empacotar .ipa
-        run: |
           cd build
           zip -qry ClickDireto-unsigned.ipa Payload
           ls -lh ClickDireto-unsigned.ipa
