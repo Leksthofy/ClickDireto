@@ -149,8 +149,11 @@ App mínimo SwiftUI, sem dependências externas, telas únicas + log:
   registra log de sucesso/erro por foto.
 - `ConnectionDiagnostics`: tela mostra modelo (ICDevice.displayName/serial), tipo de
   dispositivo, erros ICC completos.
-- `Testar recebimento`: dispara também `requestTakePicture()` (opcional — o fluxo alvo é
-  botão físico).
+- `Diagnóstico da sessão`: **CONFIRMADO PELO COMPILADOR (xcodebuild, SDK iOS 26.5, out/2026):**
+  `ICCameraDevice.requestTakePicture()` é **indisponível no iOS** (macOS-only). Conclusão:
+  pelo ImageCaptureCore no iPhone **não existe disparo remoto do obturador**; o recebimento
+  funciona com a foto tirada pelo **botão físico da câmera** (PTP ObjectAdded → `didAddItem`)
+  — exatamente o fluxo alvo do projeto. O botão de teste virou diagnóstico da sessão.
 
 Testes A–F mapeados ao termo de referência da Fase Zero; o Teste F (10 capturas) medirá
 latência média por captura. Todos os resultados registrados em log exportável.
