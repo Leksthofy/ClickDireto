@@ -162,7 +162,9 @@ extension CameraConnectionManager: ICDeviceBrowserDelegate {
         tryOpenSession(on: cameraDevice)
     }
 
-    func deviceBrowser(_ deviceBrowser: ICDeviceBrowser, didRemove device: ICDevice, moreComing: Bool) {
+    // ObjC oficial: deviceBrowser:didRemoveDevice:moreGoing: (remoção usa "moreGoing",
+    // diferente de didAddDevice:moreComing:)
+    func deviceBrowser(_ deviceBrowser: ICDeviceBrowser, didRemove device: ICDevice, moreGoing: Bool) {
         diagnostics.log("Dispositivo removido: \(device.name ?? "desconhecido").")
         if device === camera {
             camera = nil
@@ -219,9 +221,7 @@ extension CameraConnectionManager: ICCameraDeviceDelegate {
         diagnostics.log("Ejeção concluída\(error.map { " com erro: \($0)" } ?? "").")
     }
 
-    func deviceDidChangeName(_ device: ICDevice) {
-        diagnostics.log("Nome do dispositivo mudou para: \(device.name ?? "?").")
-    }
+    // deviceDidChangeName não existe no iOS (marcado unavailable) — omitido por isso.
 
     // ICCameraDeviceDelegate — catálogo completo = pronto para receber capturas
 
