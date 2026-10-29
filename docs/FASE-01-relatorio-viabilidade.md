@@ -155,6 +155,40 @@ App mínimo SwiftUI, sem dependências externas, telas únicas + log:
   funciona com a foto tirada pelo **botão físico da câmera** (PTP ObjectAdded → `didAddItem`)
   — exatamente o fluxo alvo do projeto. O botão de teste virou diagnóstico da sessão.
 
+### 5.1 Auditoria pós-teste no hardware (28/10/2026 — R8 + iPhone 14 Pro Max reais)
+
+**Teste executado:** R8 em modo USB "Importação de fotos/Controle remoto" → cabo
+USB-A↔USB-C → OTG Lightning (H'Maston ZHQ-11) → iPhone; ClickDireto instalado via
+Sideloadly (Apple ID gratuita).
+
+**Resultados comprovados no hardware:**
+- `ICDeviceBrowser` encontrou a R8 via ZHQ-11: "Dispositivo adicionado: ... USB vendor
+  1193, product ..." → **adaptação ZHQ-11 aprovada pela ImageCaptureCore** (era o maior
+  risco do projeto — resolvido).
+- Sessão aberta e catálogo completo enumerado: "Câmera PRONTA ... Fotos já no cartão:
+  2402 — não serão importadas" → dedupe por `ptpObjectHandle` func **ionando: NENHUMA
+  das 2402 fotos existentes é baixada** (o app não faz importação em massa por construção:
+  só lê índices e aguarda itens novos).
+- Historlys: perfil gratuito do iOS exibiu "desenvolvedor não confiável" até Confiar
+  manualmente (Ajustes → Geral → VPN e Gerenciamento de Dispositivo) — passo normal de
+  sideload, não é erro do app.
+
+**Observação do fotógrafo — tela preta de "transferência" na R8:** ao abrir a sessão PTP,
+a câmera entra no modo USB dela própria e a tela traseira muda para a interface de
+conexão com computador (indicadores de bateria etc.), perdendo a visualização pelo LCD.
+**Análise:** esse comportamento é do firmware da Canon no modo "Importação de
+fotos/Controle remoto" e ocorre com qualquer cliente PTP (app Foto do iOS, Capture One,
+Evoto) — não é provocado por chamada do app (nenhuma API nossa dispara import ou
+"modo de transferência"; `requestOpenSession` apenas abre a sessão, como qualquer
+tethering v). A documentação Apple (nota de obsolescência de `requestEnableTethering`):
+câmeras de terceiros que suportam o comando padrão de foto **já têm habilitado por
+padrão** o uso do obturador físico enquanto conectadas; a confirmação objetiva é
+`ICDevice.capabilities ⊇ ICDeviceCapability.cameraDeviceCanTakePicture` — o app agora
+registra essa verificação no que é de diagnóstico.
+**Pendente (teste físico):** confirmar na R8 se o obturador físico fotografa com a
+sessão aberta e se as novas fotos chegam pelo `didAddItem` — checkout final do
+critério "captura vinculada" da Fase 2.
+
 Testes A–F mapeados ao termo de referência da Fase Zero; o Teste F (10 capturas) medirá
 latência média por captura. Todos os resultados registrados em log exportável.
 
