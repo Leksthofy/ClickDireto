@@ -44,16 +44,18 @@ final class PhotoLibraryWriter {
             guard let placeholder = request.placeholderForCreatedAsset else { return }
             createdAssetID = placeholder.localIdentifier
 
-            // Álbum "ClickDireto": busca por título; cria se não existir.
+            // Álbum "ClickDireto": busca por título; cria e adiciona o asset
+            // no mesmo bloco de alterações quando o álbum ainda não existe.
             let fetch = PHAssetCollection.fetchAssetCollections(
                 with: .album, subtype: .albumRegular,
                 options: Self.albumFetchOptions())
-            let album = fetch.firstObject
-                ?? PHCollectionListChangeRequest.creationRequestForAlbum(
-                    title: Self.albumName).placeholderForCreatedAssetCollection
-            if let album,
-               let albumRequest = PHAssetCollectionChangeRequest(for: album) {
+            if let existing = fetch.firstObject,
+               let albumRequest = PHAssetCollectionChangeRequest(for: existing) {
                 albumRequest.addAssets([placeholder] as NSArray)
+            } else {
+                let albumCreation = PHAssetCollectionChangeRequest.creationRequestForAssetCollection(
+                    withTitle: Self.albumName)
+                albumCreation.addAssets([placeholder] as NSArray)
             }
         }) { success, error in
             DispatchQueue.main.async {
