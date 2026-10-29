@@ -5,12 +5,16 @@
 //  Salva o JPEG baixado na biblioteca do app Foto do iOS preservando os bytes
 //  originais (PHAssetCreationRequest.creationRequestForAsset(from:)) — sem
 //  recompressão, sem alteração de dimensões, sem internet.
+//  V2: cada arquivo é adicionado ao álbum próprio "ClickDireto" (criado
+//  automaticamente se ainda não existir).
 //
 
 import Foundation
 import Photos
 
 final class PhotoLibraryWriter {
+
+    static let albumName = "ClickDireto"
 
     func currentAuthorizationStatus() -> PHAuthorizationStatus {
         PHPhotoLibrary.authorizationStatus(for: .readWrite)
@@ -23,6 +27,9 @@ final class PhotoLibraryWriter {
     }
 
     /// Salva o arquivo JPEG na biblioteca e devolve o localIdentifier do asset criado.
+    /// A confirmação SÓ é emitida depois que o PhotoKit confirma a mudança.
+    /// Falha de álbum não cancela o salvamento do asset (a foto permanece salva;
+    /// o log registra o problema do álbum separadamente).
     func saveJPEG(at fileURL: URL, creationDate: Date?, completion: @escaping (Result<String, Error>) -> Void) {
         let resourceOptions = PHAssetResourceCreationOptions()
         resourceOptions.originalFilename = fileURL.lastPathComponent
@@ -34,7 +41,20 @@ final class PhotoLibraryWriter {
             if let creationDate {
                 request.creationDate = creationDate
             }
-            createdAssetID = request.placeholderForCreatedAsset?.localIdentifier
+            guard let placeholder = request.placeholderForCreatedAsset else { return }
+            createdAssetID = placeholder.localIdentifier
+
+            // Álbum "ClickDireto": busca por título; cria se não existir.
+            let fetch = PHAssetCollection.fetchAssetCollections(
+                with: .album, subtype: .albumRegular,
+                options: Self.albumFetchOptions())
+            let album = fetch.firstObject
+                ?? PHCollectionListChangeRequest.creationRequestForAlbum(
+                    title: Self.albumName).placeholderForCreatedAssetCollection
+            if let album,
+               let albumRequest = PHAssetCollectionChangeRequest(for: album) {
+                albumRequest.addAssets([placeholder] as NSArray)
+            }
         }) { success, error in
             DispatchQueue.main.async {
                 guard success, error == nil else {
@@ -48,5 +68,11 @@ final class PhotoLibraryWriter {
                 completion(.success(identifier))
             }
         }
+    }
+
+    private static func albumFetchOptions() -> PHFetchOptions {
+        let options = PHFetchOptions()
+        options.predicate = NSPredicate(format: "title == %@", albumName)
+        return options
     }
 }

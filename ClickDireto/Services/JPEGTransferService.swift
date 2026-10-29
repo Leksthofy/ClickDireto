@@ -32,6 +32,7 @@ final class JPEGTransferService: NSObject, ICCameraDeviceDownloadDelegate {
     private let tempDirectory: URL
     private let workQueue = DispatchQueue(label: "ClickDireto.transfer")
     private var pendingByFilename: [String: PendingDownload] = [:]
+    private var pendingByHandleKey: [String: PendingDownload] = [:]
 
     init(tempDirectory: URL) {
         self.tempDirectory = tempDirectory
@@ -47,6 +48,7 @@ final class JPEGTransferService: NSObject, ICCameraDeviceDownloadDelegate {
                                       onDone: completion)
         workQueue.async { [weak self] in
             self?.pendingByFilename[originalName] = pending
+            self?.pendingByHandleKey[handleKey] = pending
         }
 
         let options: [ICDownloadOption: Any] = [
@@ -74,17 +76,17 @@ final class JPEGTransferService: NSObject, ICCameraDeviceDownloadDelegate {
 
             let savedName = options[ICDownloadOption.savedFilename.rawValue] as? String
             let lookupName = savedName ?? file.name ?? ""
+            let handleKey = "ptp-\(file.ptpObjectHandle)"
             let pendingCandidate = self.pendingByFilename.removeValue(forKey: lookupName)
                 ?? self.pendingByFilename.removeValue(forKey: file.name ?? "")
+                ?? self.pendingByHandleKey.removeValue(forKey: handleKey)
+            if let pending = pendingCandidate {
+                self.pendingByFilename.removeValue(forKey: file.name ?? "")
+                self.pendingByHandleKey.removeValue(forKey: handleKey)
+            }
 
             guard let pending = pendingCandidate else {
-                let lookup = lookupName
-                DispatchQueue.main.async {
-                    pendingCandidate?.onDone(.failure(NSError(domain: "ClickDireto",
-                                                     code: -2,
-                                                     userInfo: [NSLocalizedDescriptionKey:
-                                                        "Download finalizado sem registro pendente (\(lookup))."])))
-                }
+                // ICC entregou um download que não iniciamos: nada a notificar.
                 return
             }
 

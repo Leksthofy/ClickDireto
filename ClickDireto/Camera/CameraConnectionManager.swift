@@ -11,13 +11,16 @@ import Foundation
 import ImageCaptureCore
 import CoreGraphics
 import Photos
+import UIKit
 
 enum ConnectionPhase: Equatable {
     case idle                // nada iniciado
     case browsing            // procurando câmera
+    case detected            // câmera vista pelo browser, sessão ainda não aberta
     case authorizing         // aguardando permissão do usuário para acessar a câmera
     case connected           // sessão aberta, catálogo enumerado (pronta para receber)
-    case receivingPhoto      // JPEG em trânsito
+    case receivingPhoto      // JPEG em trânsito (baixando)
+    case savingPhoto         // JPEG baixado; gravando no app Foto (confirmação pendente)
     case error(String)
 }
 
@@ -37,6 +40,10 @@ final class CameraConnectionManager: NSObject, ObservableObject {
     private var camera: ICCameraDevice?
     private var isReady = false
 
+    /// Fila serial do pipeline: download → validação → save no Foto → publicação.
+    /// Garante ordem FIFO entre disparos e evita dois downloads simultâneos.
+    private let pipelineQueue = DispatchQueue(label: "ClickDireto.pipeline", qos: .userInitiated)
+
     init(appState: AppState,
          eventMonitor: CaptureEventMonitor,
          transferService: JPEGTransferService,
@@ -54,9 +61,10 @@ final class CameraConnectionManager: NSObject, ObservableObject {
     // MARK: - Ações públicas (chamadas da interface)
 
     func startSearchingForCamera() {
+        appState.clearSessionVisuals()
         appState.setPhase(.browsing)
         diagnostics.log("Iniciando busca por câmeras (ICDeviceBrowser, tipo .camera)…")
-        browser.browsedDeviceTypeMask = ICDeviceTypeMask.camera
+        browser.browsedDeviceTypeMask = .camera
         browser.start()
     }
 
@@ -102,6 +110,12 @@ final class CameraConnectionManager: NSObject, ObservableObject {
             self.diagnostics.log("Status de autorização de conteúdo: \(status)")
             self.diagnostics.log("Abrindo sessão com a câmera (requestOpenSession)…")
             device.requestOpenSession()
+            // Permissão de Foto é solicitada no mesmo fluxo (o prompt do iOS
+            // aparece junto com o da câmera; antes disso o app só lia o status).
+            self.photoWriter.requestAuthorization { photoStatus in
+                self.appState.photoLibraryStatus = photoStatus
+                self.diagnostics.log("Permissão de Foto: \(photoStatus)")
+            }
         }
     }
 
@@ -115,34 +129,51 @@ final class CameraConnectionManager: NSObject, ObservableObject {
 
         for file in newFiles {
             let handleKey = "ptp-\(file.ptpObjectHandle)"
+            let fileForClosure = file
             diagnostics.registerAdded(handleKey: handleKey)
-            transferService.download(file, from: camera) { [weak self] result in
+            // Fila serial: um disparo processado por vez, em ordem de chegada.
+            pipelineQueue.async { [weak self] in
                 guard let self else { return }
-                switch result {
-                case .success(let downloaded):
-                    self.photoWriter.saveJPEG(at: downloaded.jpegURL,
-                                              creationDate: downloaded.captureDate) { saveResult in
-                        switch saveResult {
-                        case .success(let assetIdentifier):
-                            self.eventMonitor.markProcessed(handleKey: handleKey)
-                            if let info = try? FileManager.default
-                                .attributesOfItem(atPath: downloaded.jpegURL.path) {
-                                let bytes = (info[.size] as? NSNumber)?.doubleValue ?? 0
-                                self.diagnostics.logLatency(handleKey: handleKey, bytes: bytes)
+                self.transferService.download(fileForClosure, from: camera) { [weak self] result in
+                    guard let self else { return }
+                    switch result {
+                    case .success(let downloaded):
+                        self.appState.phase = .savingPhoto
+                        self.photoWriter.saveJPEG(at: downloaded.jpegURL,
+                                                  creationDate: downloaded.captureDate) { saveResult in
+                            switch saveResult {
+                            case .success(let assetIdentifier):
+                                self.eventMonitor.markProcessed(handleKey: handleKey)
+                                var sizeBytes: Double = 0
+                                var savedImage: UIImage?
+                                if let info = try? FileManager.default
+                                    .attributesOfItem(atPath: downloaded.jpegURL.path) {
+                                    sizeBytes = (info[.size] as? NSNumber)?.doubleValue ?? 0
+                                }
+                                // Foto-hero é carregada ANTES de remover o temporário.
+                                if let data = try? Data(contentsOf: downloaded.jpegURL) {
+                                    savedImage = UIImage(data: data)
+                                }
+                                self.diagnostics.logLatency(handleKey: handleKey, bytes: sizeBytes)
+                                if let savedImage {
+                                    self.appState.publishSavedPhoto(
+                                        image: savedImage,
+                                        filename: downloaded.jpegURL.lastPathComponent)
+                                }
+                                self.diagnostics.log("Salvo no app Foto (\(assetIdentifier)).")
+                                try? FileManager.default.removeItem(at: downloaded.jpegURL)
+                                self.appState.onPhotoSaved(count: self.diagnostics.successCount,
+                                                           filename: downloaded.jpegURL.lastPathComponent)
+                                self.appState.setPhase(.connected)
+                            case .failure(let error):
+                                self.diagnostics.log("ERRO ao salvar no app Foto: \(error)")
+                                self.appState.setPhase(.connected)
                             }
-                            self.diagnostics.log("Salvo no app Foto (\(assetIdentifier)).")
-                            try? FileManager.default.removeItem(at: downloaded.jpegURL)
-                            self.appState.onPhotoSaved(count: self.diagnostics.successCount,
-                                                       filename: downloaded.jpegURL.lastPathComponent)
-                            self.appState.setPhase(.connected)
-                        case .failure(let error):
-                            self.diagnostics.log("ERRO ao salvar no app Foto: \(error)")
-                            self.appState.setPhase(.connected)
                         }
+                    case .failure(let error):
+                        self.diagnostics.log("ERRO no download: \(error)")
+                        self.appState.setPhase(.connected)
                     }
-                case .failure(let error):
-                    self.diagnostics.log("ERRO no download: \(error)")
-                    self.appState.setPhase(.connected)
                 }
             }
         }
@@ -163,6 +194,7 @@ extension CameraConnectionManager: ICDeviceBrowserDelegate {
         cameraDevice.delegate = self
         appState.setCamera(deviceName: cameraDevice.name,
                            usbIDs: "USB vendor \(cameraDevice.usbVendorID), product \(cameraDevice.usbProductID)")
+        appState.setPhase(.detected)
         tryOpenSession(on: cameraDevice)
     }
 
