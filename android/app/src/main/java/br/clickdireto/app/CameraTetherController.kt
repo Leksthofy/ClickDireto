@@ -187,7 +187,7 @@ class CameraTetherController(private val appContext: Context) {
 
     private inner class CanonSession(private val device: UsbDevice) {
 
-        private val mtp = MtpDevice()
+        private val mtp = MtpDevice(device)
         private var connection: UsbDeviceConnection? = null
         private var connectionClosed = false
         private val running = AtomicBoolean(false)
@@ -204,8 +204,9 @@ class CameraTetherController(private val appContext: Context) {
                     val event = mtp.readEvent(cancelSignal)
                     when (event.eventCode) {
                         MtpEvent.EVENT_OBJECT_ADDED -> {
-                            val handle = event.getObjectAdded()
-                            importIfNew(handle, "evento PTP OBJECT_ADDED")
+                            // MtpEvent nao expoe o handle adicionado (so getEventCode/getDevicePropCode);
+                            // o evento serve de gatilho: fazemos a diferenca de handles agora.
+                            importNewHandlesByDiff("evento PTP OBJECT_ADDED")
                         }
                     }
                 } catch (canceled: android.os.OperationCanceledException) {
@@ -226,7 +227,7 @@ class CameraTetherController(private val appContext: Context) {
         }
 
         /** Fallback: varredura de handles (caso a câmera não dispare o evento). */
-        private fun pollNewObjects(source: String) {
+        private fun importNewHandlesByDiff(source: String) {
             try {
                 val storageIds = mtp.getStorageIds() ?: return
                 if (storageIds.isEmpty()) return
@@ -242,7 +243,7 @@ class CameraTetherController(private val appContext: Context) {
         }
 
         private fun importFallbackIfRunning() {
-            if (running.get()) scheduler.execute { pollNewObjects("varredura após interrupção") }
+            if (running.get()) scheduler.execute { importNewHandlesByDiff("varredura após interrupção") }
         }
 
         fun open(): Boolean {
@@ -288,7 +289,7 @@ class CameraTetherController(private val appContext: Context) {
             running.set(true)
             eventThread = Thread({ eventLoop() }, "ClickDireto-events").apply { start() }
             scheduler.scheduleWithFixedDelay(
-                { if (running.get()) pollNewObjects("varredura de seguranca (3 s)") },
+                { if (running.get()) importNewHandlesByDiff("varredura de seguranca (3 s)") },
                 3, 3, TimeUnit.SECONDS
             )
         }
@@ -354,19 +355,23 @@ class CameraTetherController(private val appContext: Context) {
                     safeName, dest.length() / 1024.0, source, detectedSec
                 )
             )
-            val dateTaken = GalleryWriter.parsePtpDate(info.dateCreated)
+            // getDateCreated() ja vem em milissegundos desde 1970 (docs oficiais) — sem parse.
+            val rawDate = info.dateCreated
+            val dateTaken: Long? = if (rawDate > 0L) rawDate else null
             val saveOutcome = GalleryWriter.saveJpeg(appContext, dest, dateTaken)
             val totalSec = (SystemClock.elapsedRealtime() - startedAt) / 1000.0
             saveOutcome.fold(
                 onSuccess = { savedPath ->
-                    val hero = decodeScaled(dest, MAX_HERO_DIMENSION)
-                    val thumb = decodeScaled(dest, MAX_THUMB_DIMENSION) ?: hero
+                    val decodedHero = decodeScaled(dest, MAX_HERO_DIMENSION)
+                    val decodedThumb = decodeScaled(dest, MAX_THUMB_DIMENSION) ?: decodedHero
                     try { dest.delete() } catch (_: Exception) {}
-                    if (hero == null) {
+                    if (decodedHero == null) {
                         main.post { listener?.onSessionError("Arquivo baixado não abriu como imagem") }
                         log?.invoke("ERRO: decodificação de imagem falhou.")
                         return
                     }
+                    val hero: Bitmap = decodedHero
+                    val thumb: Bitmap = decodedThumb ?: hero
                     photosReceived++
                     latencySamples++
                     avgLatency += (totalSec - avgLatency) / latencySamples
