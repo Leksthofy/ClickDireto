@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">ClickDireto</string>
+    <string name="tagline">Entrega instantânea por cabo</string>
+    <string name="start_session">Iniciar sessão</string>
+    <string name="end_session">Encerrar sessão</string>
+    <string name="diagnostics">Diagnóstico</string>
+    <string name="album_note">Salvas no álbum “ClickDireto” do app Galeria</string>
+</resources>

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="cdBackground">#090A0F</color>
+    <color name="cdSurface">#14161F</color>
+    <color name="cdBorder">#252837</color>
+    <color name="cdGold">#F5B942</color>
+    <color name="cdText">#ECEEF2</color>
+    <color name="cdTextDim">#9AA2B2</color>
+    <color name="cdOk">#3EC97A</color>
+    <color name="cdFail">#F06B5E</color>
+    <color name="ic_launcher_background">#090A0F</color>
+</resources>

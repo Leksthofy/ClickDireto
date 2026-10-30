@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/cdBackground"
+    android:paddingStart="18dp"
+    android:paddingEnd="18dp"
+    android:paddingTop="14dp"
+    android:paddingBottom="14dp">
+
+    <!-- Cabeçalho -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+            <TextView
+                android:id="@+id/titleText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/app_name"
+                android:textSize="24sp"
+                android:textStyle="bold"
+                android:textColor="@color/cdText" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/tagline"
+                android:textSize="12sp"
+                android:textColor="@color/cdTextDim" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/counterText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="26sp"
+            android:textStyle="bold"
+            android:textColor="@color/cdGold"
+            android:contentDescription="Fotos recebidas nesta sessão" />
+    </LinearLayout>
+
+    <!-- Estado da conexão (honesta) -->
+    <TextView
+        android:id="@+id/stateText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:paddingStart="14dp"
+        android:paddingEnd="14dp"
+        android:paddingTop="10dp"
+        android:paddingBottom="10dp"
+        android:background="@drawable/bg_statepill"
+        android:textSize="15sp"
+        android:textStyle="bold"
+        android:textColor="@color/cdText"
+        android:maxLines="2"
+        android:ellipsize="end"
+        android:text="Desconectado" />
+
+    <!-- Foto em destaque -->
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:layout_marginTop="10dp">
+
+        <ImageView
+            android:id="@+id/heroImage"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="fitCenter"
+            android:contentDescription="Última fotografia recebida"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/heroMessage"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:gravity="center"
+            android:textSize="16sp"
+            android:textColor="@color/cdTextDim"
+            android:text="Conecte sua câmera para começar." />
+    </FrameLayout>
+
+    <!-- Info da última foto + latência -->
+    <TextView
+        android:id="@+id/infoText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:textSize="12sp"
+        android:textColor="@color/cdTextDim"
+        android:maxLines="2"
+        android:ellipsize="end" />
+
+    <!-- Miniaturas recentes -->
+    <HorizontalScrollView
+        android:id="@+id/scrollThumbs"
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:layout_marginTop="6dp"
+        android:scrollbars="none"
+        android:visibility="gone">
+
+        <LinearLayout
+            android:id="@+id/thumbRow"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:orientation="horizontal" />
+    </HorizontalScrollView>
+
+    <!-- Controles -->
+    <Button
+        android:id="@+id/startButton"
+        android:layout_width="match_parent"
+        android:layout_height="52dp"
+        android:layout_marginTop="12dp"
+        android:background="@drawable/bg_btn_primary"
+        android:text="@string/start_session"
+        android:textStyle="bold"
+        android:textSize="16sp"
+        android:textColor="#0B0C10"
+        android:stateListAnimator="@null" />
+
+    <Button
+        android:id="@+id/endButton"
+        android:layout_width="match_parent"
+        android:layout_height="52dp"
+        android:layout_marginTop="8dp"
+        android:background="@drawable/bg_btn_dark"
+        android:text="@string/end_session"
+        android:textStyle="bold"
+        android:textSize="16sp"
+        android:textColor="@color/cdText"
+        android:stateListAnimator="@null" />
+
+    <!-- Rodapé: álbum + diagnóstico -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:orientation="vertical"
+        android:gravity="center">
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/album_note"
+            android:textSize="11sp"
+            android:textColor="@color/cdTextDim" />
+        <TextView
+            android:id="@+id/logLink"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:padding="6dp"
+            android:text="@string/diagnostics"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:textColor="@color/cdGold" />
+    </LinearLayout>
+</LinearLayout>

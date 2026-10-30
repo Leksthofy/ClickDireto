@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Canon Inc. (vendor-id decimal 1193 / 0x04A9) -->
+    <usb-device vendor-id="1193" />
+    <!-- Qualquer câmera de classe "Still Image" (PTP/MTP), para câmaras de outros fabricantes -->
+    <usb-device class="6" />
+</resources>
